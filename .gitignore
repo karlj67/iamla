@@ -1,0 +1,12 @@
+# Ignorer node_modules
+node_modules/
+
+# Ignorer les fichiers de cache
+.npm
+.pnpm
+.yarn
+
+# Ignorer les logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

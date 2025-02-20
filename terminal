@@ -1,0 +1,117 @@
+mkdir iamla
+cd iamla
+npm init -y
+npm install express mysql2 jsonwebtoken bcrypt cors dotenv
+# Générer une clé JWT sécurisée
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+ls -R
+mkdir -p src/{config,controllers,middleware,models,routes}
+touch src/app.js src/config/config.js
+touch src/controllers/{authController,userController,visitController,teamController,prescriberController,locationController,statsController}.js
+touch src/middleware/{auth,roleCheck}.js
+touch src/models/{User,Visit,Team,Prescriber,PrescriberType,Location}.js
+touch src/routes/{auth,users,visits,teams,prescribers,locations,stats}.js
+
+mysql -u rycapharma1 -p
+# Entrez le mot de passe : @Karljess2023
+# Dans mysql :
+SHOW DATABASES;
+USE rycapharma1;
+SHOW TABLES;
+
+npm run dev 
+
+curl -X POST http://localhost:3000/api/auth/register \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "admin@rycapharma.com",
+  "password": "Admin@2024",
+  "first_name": "Admin",
+  "last_name": "RycaPharma",
+  "role": "admin"
+}' 
+
+curl -X POST http://localhost:3000/api/auth/login \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "admin@rycapharma.com",
+  "password": "Admin@2024"
+}' 
+
+curl -X POST http://localhost:3000/api/auth/register \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "karlj67@gmail.com",
+  "password": "@Karljess2023",
+  "first_name": "Bobby",
+  "last_name": "Bob",
+  "role": "admin"
+}'
+
+curl -X POST http://localhost:3000/api/auth/login \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "karlj67@gmail.com",
+  "password": "@Karljess2023"
+}'
+
+# Sur le serveur
+mkdir /var/www/iamla
+cd /var/www/iamla
+
+# Installation de Node.js et npm
+curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Installation de PM2
+sudo npm install -y pm2 -g
+
+# Installation de MySQL
+sudo apt install -y mysql-server
+sudo mysql_secure_installation
+
+# Configuration de MySQL
+sudo mysql
+CREATE DATABASE rycapharma1;
+CREATE USER 'rycapharma1'@'localhost' IDENTIFIED BY '@Karljess2023';
+GRANT ALL PRIVILEGES ON rycapharma1.* TO 'rycapharma1'@'localhost';
+FLUSH PRIVILEGES;
+exit;
+
+# Cloner le projet (si vous utilisez Git)
+git clone <votre_repo> .
+# OU transférer les fichiers via FTP/SFTP
+
+# Installation des dépendances
+npm install
+
+# Configuration des variables d'environnement
+nano .env
+# Copier le contenu de votre .env avec les valeurs de production
+
+# Importer la base de données
+mysql -u rycapharma1 -p rycapharma1 < database.sql
+
+# Démarrer l'application avec PM2
+pm2 start ecosystem.config.js --env production
+pm2 save
+
+# Configuration de Nginx comme reverse proxy
+sudo apt install -y nginx 
+
+# Activer le site
+sudo ln -s /etc/nginx/sites-available/iamla /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+# Installation de Certbot pour SSL
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d votre-domaine.com 
+
+# Configurer le pare-feu
+sudo ufw allow 'Nginx Full'
+sudo ufw allow OpenSSH
+sudo ufw enable
+
+# Installer et configurer fail2ban
+sudo apt install -y fail2ban 
