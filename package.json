@@ -9,13 +9,12 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "npx jest",
+    "test": "jest --verbose --detectOpenHandles",
     "build": "npm install --production",
     "clean": "if exist node_modules rmdir /s /q node_modules && if exist package-lock.json del package-lock.json",
     "lint": "eslint src/**/*.{js,ts,tsx}",
     "format": "prettier --write src/**/*.{js,ts,tsx}",
-    "validate": "npm run lint && npm run test",
-    "prepare": "husky"
+    "validate": "npm run lint && npm run test"
   },
   "config": {
     "port": "8100"

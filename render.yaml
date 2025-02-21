@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: iamla-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8100
+      - key: JWT_SECRET
+        generateValue: true
+    healthCheckPath: /api
+    autoDeploy: true
+
+  - type: pserv
+    name: iamla-mysql
+    env: docker
+    disk:
+      name: data
+      mountPath: /var/lib/mysql
+      sizeGB: 10
+    plan: standard
+    envVars:
+      - key: MYSQL_DATABASE
+        value: iamla_base
+      - key: MYSQL_USER
+        value: iamla_admin
+      - key: MYSQL_PASSWORD
+        generateValue: true
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true 
