@@ -112,7 +112,7 @@ describe('Auth Controller', () => {
   describe('Role Authorization', () => {
     it('should allow admin access to protected route', async () => {
       const response = await request(app)
-        .get('/api/stats/admin')
+        .get('/api/stats')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(200);

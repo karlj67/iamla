@@ -11,6 +11,7 @@ const locationRoutes = require('./routes/locations');
 const statsRoutes = require('./routes/stats');
 const userRoutes = require('./routes/users');
 const teamRoutes = require('./routes/teams');
+const prescriberTypeRoutes = require('./routes/prescriberTypes');
 
 const app = express();
 
@@ -56,6 +57,8 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/prescriber-types', prescriberTypeRoutes);
+app.use('/api/stats/admin', statsRoutes);
 
 // Gestion des erreurs 404 pour l'API
 app.use('/api/*', (req, res) => {

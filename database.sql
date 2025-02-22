@@ -1,16 +1,16 @@
 CREATE DATABASE IF NOT EXISTS iamla_base;
 USE iamla_base;
 
-CREATE TABLE users (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password TEXT NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    role ENUM('admin', 'supervisor', 'medical_visitor') NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('admin', 'supervisor', 'medical_visitor')) NOT NULL,
     team_id INT,
     profile_photo VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
@@ -157,59 +157,7 @@ VALUES
 
 -- Mettre à jour le contrôleur visitController pour utiliser user_id au lieu de team_id
 
--- 1. Procédures stockées
-DELIMITER //
-
-CREATE PROCEDURE sp_set_monthly_objective(
-    IN p_user_id INT,
-    IN p_month DATE,
-    IN p_visit_objective INT,
-    IN p_financial_objective DECIMAL(10, 2)
-)
-BEGIN
-    INSERT INTO monthly_objectives (user_id, month, visit_objective, financial_objective)
-    VALUES (p_user_id, p_month, p_visit_objective, p_financial_objective)
-    ON DUPLICATE KEY UPDATE
-        visit_objective = p_visit_objective,
-        financial_objective = p_financial_objective;
-END //
-
-CREATE PROCEDURE sp_get_user_objectives(
-    IN p_user_id INT,
-    IN p_year INT
-)
-BEGIN
-    SELECT 
-        mo.*,
-        COALESCE(v.completed_visits, 0) as completed_visits,
-        COALESCE(vv.total_value, 0) as achieved_value
-    FROM monthly_objectives mo
-    LEFT JOIN (
-        SELECT 
-            visitor_id,
-            DATE_FORMAT(planned_date, '%Y-%m-01') as month,
-            COUNT(*) as completed_visits
-        FROM visits
-        WHERE status = 'executed'
-        GROUP BY visitor_id, DATE_FORMAT(planned_date, '%Y-%m-01')
-    ) v ON mo.user_id = v.visitor_id AND mo.month = v.month
-    LEFT JOIN (
-        SELECT 
-            v.visitor_id,
-            DATE_FORMAT(v.planned_date, '%Y-%m-01') as month,
-            SUM(vv.amount) as total_value
-        FROM visits v
-        JOIN visit_values vv ON v.id = vv.visit_id
-        WHERE v.status = 'executed'
-        GROUP BY v.visitor_id, DATE_FORMAT(v.planned_date, '%Y-%m-01')
-    ) vv ON mo.user_id = vv.visitor_id AND mo.month = vv.month
-    WHERE mo.user_id = p_user_id
-    AND YEAR(mo.month) = p_year;
-END //
-
-DELIMITER ;
-
--- 2. Table d'historisation et Triggers
+-- 1. Table d'historisation et Triggers
 CREATE TABLE IF NOT EXISTS visits_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     visit_id INT NOT NULL,
@@ -220,8 +168,6 @@ CREATE TABLE IF NOT EXISTS visits_history (
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     changed_by INT
 );
-
-DELIMITER //
 
 CREATE TRIGGER tr_visits_after_update
 AFTER UPDATE ON visits
@@ -235,7 +181,7 @@ BEGIN
         NEW.id, NEW.visitor_id, NEW.prescriber_id,
         NEW.status, 'UPDATE', @user_id
     );
-END //
+END;
 
 CREATE TRIGGER tr_visits_after_insert
 AFTER INSERT ON visits
@@ -249,9 +195,7 @@ BEGIN
         NEW.id, NEW.visitor_id, NEW.prescriber_id,
         NEW.status, 'INSERT', @user_id
     );
-END //
-
-DELIMITER ;
+END;
 
 -- 3. Vues pour le reporting
 CREATE OR REPLACE VIEW vw_visitor_performance AS
@@ -303,6 +247,4 @@ GROUP BY
     t.name,
     t.laboratory_name,
     DATE_FORMAT(v.planned_date, '%Y-%m');
-
-DELIMITER ;
 

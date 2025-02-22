@@ -1,0 +1,13 @@
+{
+  "builds": [
+    { "src": "src/api/*.js", "use": "@vercel/node" },
+    { "src": "dist/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "src/api/$1" },
+    { "src": "/(.*)", "dest": "dist/$1" }
+  ],
+  "includeFiles": [
+    "src/config/tidb/ca.pem"
+  ]
+} 

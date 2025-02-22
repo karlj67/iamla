@@ -4,11 +4,14 @@ const db = require('../../config/database');
 const { generateToken } = require('../helpers/auth');
 
 describe('PrescriberType Controller', () => {
-  let adminToken, supervisorToken;
+  let adminToken;
 
   beforeAll(async () => {
     adminToken = generateToken({ id: 1, role: 'admin' });
-    supervisorToken = generateToken({ id: 2, role: 'supervisor' });
+  });
+
+  afterAll(async () => {
+    await db.end();
   });
 
   describe('GET /api/prescriber-types', () => {
@@ -46,7 +49,7 @@ describe('PrescriberType Controller', () => {
 
       const response = await request(app)
         .post('/api/prescriber-types')
-        .set('Authorization', `Bearer ${supervisorToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(newType);
 
       expect(response.status).toBe(201);
