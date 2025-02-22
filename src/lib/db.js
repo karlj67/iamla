@@ -1,8 +1,3 @@
-import { createPool } from '@vercel/postgres';
+import supabase from '../config/database';
 
-export const pool = createPool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: {
-    rejectUnauthorized: true
-  }
-}); 
+export const getClient = () => supabase; 
