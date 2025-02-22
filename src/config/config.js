@@ -20,7 +20,7 @@ const config = {
     },
     port: 8100,
     cors: {
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+      origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       credentials: true
     },
