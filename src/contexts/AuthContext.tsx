@@ -1,62 +1,81 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { supabase } from '../config/database';
+import type { UserRole } from '../types/business';
+
+interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+}
 
 interface AuthContextType {
-  user: any;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
+          setUser({ ...session.user, role });
+        }
+      } catch (error) {
+        console.error('Erreur de session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    checkSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        email,
-        password
-      });
+  const fetchUserRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
 
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-    } catch (error) {
-      throw error;
+    if (error) throw error;
+    return data.role as UserRole;
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    
+    if (data.user) {
+      const role = await fetchUserRole(data.user.id);
+      setUser({ ...data.user, role });
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+} 
